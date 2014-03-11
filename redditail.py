@@ -114,14 +114,7 @@ def main():
     headers = { 'User-Agent' : user_agent }
 
     try:
-        after = ''
-        lastSize = -1
-        pType = 'hot'
-
         while True:
-            # ignore the following page(s) for now.
-            after = ''
-
             url = 'http://api.reddit.com/r/' + reddits_string + '/hot.json?limit=100'
 
             info('GET  ' + url)
@@ -132,10 +125,6 @@ def main():
                 info('content-length: ' + response.info().getheader('content-length'))
 
                 j = json.loads(data)
-                if 'after' in j['data'] and j['data']['after']:
-                    after = '&after=' + j['data']['after']
-                else:
-                    after = ''
 
                 ch = children(j)
                 chnew = []
