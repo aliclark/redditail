@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, errno, os, os.path, urllib2, json, time, HTMLParser, termcolor, string, socket, codecs, datetime
+import sys, errno, os, os.path, urllib2, json, time, string, socket, codecs, datetime
 
 sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
@@ -29,19 +29,7 @@ sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
   API clients instead.
 """
 
-h = HTMLParser.HTMLParser()
-
-# In practice, 5 digit numbers are common
-upsmax = 5
-def upsmax_update(n):
-    global upsmax
-    l = len(n)
-    if l > upsmax:
-        upsmax = l
-
-def upspad(n):
-    upsmax_update(n)
-    return n.rjust(upsmax)
+fields = None
 
 def children(j):
     rv = []
@@ -49,18 +37,18 @@ def children(j):
         rv.append(ch['data'])
     return rv
 
-def upsstr(u):
-    return upspad(str(u))
+def trylookup(item, default, field):
+    if field in item:
+        return item[field]
+    return default
+
+def itemstring(item):
+    return '\t'.join(map(lambda field: unicode(trylookup(item, '', field)), fields)) + '\n'
 
 def textify(ch):
     s = ''
     for c in ch:
-        score = str(int(round((c['ups'] * 10.) / (c['ups'] + c['downs']))))
-        if score == '10':
-            score = '+'
-
-        s += termcolor.colored(time.strftime("%H:%M", time.localtime(int(c['created_utc']))), 'white') + ' ' + termcolor.colored(upsstr(c['ups']), 'green') + ' ' + termcolor.colored(score, 'yellow') + ' ' + h.unescape(c['title']) + ' ' + termcolor.colored('https://pay.reddit.com' + c['permalink'], 'cyan') + ' ' + termcolor.colored(c['domain'], 'yellow') + '\n'
-
+        s += itemstring(c)
     return s
 
 def info(x):
@@ -84,6 +72,11 @@ def mkdir_p(path):
         else: raise
 
 def main():
+    global fields
+
+    # TODO: put this in a config file
+    fields = ['created_utc', 'ups', 'downs', 'title', 'permalink', 'domain']
+
     logf = None
     titles = set([])
 
@@ -149,7 +142,6 @@ def main():
                             if (c['title'] in t) or (t in c['title']):
                                 break
                         else:
-                            upsstr(c['ups'])
                             titles.add(c['title'])
                             chnew.append(c)
                             if logf:
