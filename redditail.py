@@ -87,10 +87,11 @@ def main():
     logf = None
     titles = set([])
 
+    # it can take time when busy
     timeout_secs = 16
 
     # Rule 1 & 3 - (be careful not to stop and start within this time
-    # though)
+    # though, TODO: save 'lastcall' timestamp in dotfile)
     sleep_time = 30
 
     mkdir_p(os.path.expanduser("~/.redditail"))
@@ -136,15 +137,16 @@ def main():
                     if c['ups'] <= 1:
                         continue
 
+                    # filter out reposts from the batch, showing the earlier one only
                     for c2 in ch:
                         if (((c2['title'] in c['title']) or (c['title'] in c2['title'])) and
                             (int(c['id'], 36) > int(c2['id'], 36))):
                             # c is a repost of c2
                             break
                     else:
+                        # if we've already seen a similar title, ignore this one.
                         for t in titles:
                             if (c['title'] in t) or (t in c['title']):
-                                # c has already been seen in this session
                                 break
                         else:
                             upsstr(c['ups'])
